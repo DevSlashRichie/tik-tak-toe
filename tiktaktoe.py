@@ -112,7 +112,7 @@ def check_testing():
     """
     while True:
         is_var_set = "TEST" in os.environ
-        is_test_from_env = bool(int(os.environ.get("TEST")))
+        is_test_from_env = os.environ.get("TEST") and bool(int(os.environ.get("TEST")))
 
         if is_var_set:
             if is_test_from_env:
