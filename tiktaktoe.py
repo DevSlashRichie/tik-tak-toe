@@ -3,11 +3,13 @@ This is a simple Tik Tak Toe game that will be used to demonstrate the use of
 functions in Python. 
 """
 from time import sleep
-import os
+import random as rand
+#import matplotlib.pyplot as plt
 
-board_box = [[' ' for i in range(3)] for _ in range(3)]
+def create_board_box():
+    return [[' ' for i in range(3)] for _ in range(3)]
 
-def print_board(board, player1, player2):
+def print_board(board, player1, player2, seleted_index):
     """
     Print the board with the players' names. This acts as the game arena.
 
@@ -19,6 +21,8 @@ def print_board(board, player1, player2):
         The name of player 1
     player2: str
         The name of player 2
+    selected_index: tuple
+        The index of the selected cell
 
     """
     print(f"P1: {player1} (X)")
@@ -26,13 +30,19 @@ def print_board(board, player1, player2):
     print()
 
     for (i, row) in enumerate(board):
-        for cell in row:
-            print(cell, end=' | ')
+        for j, cell in enumerate(row):
+            is_selected = (i, j) == seleted_index
+
+            cell_text =  "*" if cell == " " else cell
+
+            cell_display = "\033[92m%s\033[0m" % cell_text if is_selected else cell
+            print(cell_display, end=' | ')
         print()
         is_last_row = i == len(board) - 1
 
         if not is_last_row:
             print("-" * 12)
+
 
 def clean_screen():
     """
@@ -101,34 +111,173 @@ def pruebas():
     clean_screen()
     print("Finished testing")
 
-def check_testing():
+def print_graphics_board(board):
+    fig, ax = plt.subplots()
+
+    # Set the limits and remove ticks
+    ax.set_xlim(0, 3)
+    ax.set_ylim(0, 3)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Draw the grid
+    for i in range(1, 3):
+        ax.axhline(i, color='black', lw=2)
+        ax.axvline(i, color='black', lw=2)
+
+    # Plot the Xs and Os
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == 'X':
+                ax.text(j + 0.5, 2.5 - i, 'X', fontsize=40, ha='center', va='center')
+            elif board[i][j] == 'O':
+                ax.text(j + 0.5, 2.5 - i, 'O', fontsize=40, ha='center', va='center')
+
+    # Show the plot
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.show()
+
+def print_menu():
     """
-    Ask the user if they want to run the tests.
+    Print the menu of the game.
+    """
+    print("1. Start game")
+    print("2. Run tests")
+    print("3. Exit")
+
+def request_menu():
+    """
+    Request the user to select an option from the menu.
 
     Returns:
     --------
-    bool
-        True if the user wants to run the tests, False otherwise.
+    int
+        The option selected by the user.
     """
     while True:
-        is_var_set = "TEST" in os.environ
-        is_test_from_env = os.environ.get("TEST") and bool(int(os.environ.get("TEST")))
+        print_menu()
+        option = input("Select an option: ")
 
-        if is_var_set:
-            if is_test_from_env:
-                return True
-            else:
-                return False
-
-        answer = input("Do you want to run the tests? (Y/n): ")
-        is_test = answer.lower() == 'y' or answer.lower() == 'yes' or not answer
-
-        if is_test:
-            return True
-        elif answer.lower() == 'n' or answer.lower() == 'no':
-            return False
+        if option == "1":
+            return 1
+        elif option == "2":
+            return 2
+        elif option == "3":
+            print("bye!")
+            exit(0)
+            return None
         else:
-            print("Please enter a valid option")
+            print("Please select a valid option")
+
+def print_banner(text):
+    """
+    Print a banner with the given text.
+
+    Parameters:
+    -----------
+    text: str
+        The text to display in the banner.
+    """
+    print("=" * 40)
+    print()
+    print(text)
+    print()
+    print("=" * 40)
+
+
+
+def getch():
+    import sys, termios, tty
+
+    fd = sys.stdin.fileno()
+    orig = termios.tcgetattr(fd)
+
+    try:
+        tty.setcbreak(fd)  # or tty.setraw(fd) if you prefer raw mode's behavior.
+        return sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
+
+def manage_input_in_board(input_text, current_pos):
+    """
+    This function will manage the input in the board.
+
+    Parameters:
+    -----------
+    input_text: str
+        The input text from the user.
+    current_pos: tuple
+        A tuple that represents the current position of the cursor.
+
+    Returns:
+    --------
+    tuple
+        A tuple that represents the updated position of the cursor.
+    """
+    while True:
+        if input_text == "w":
+            return (max(0, current_pos[0] - 1), current_pos[1])
+        elif input_text == "s":
+            return (min(2, current_pos[0] + 1), current_pos[1])
+        elif input_text == "a":
+            return (current_pos[0], max(0, current_pos[1] - 1))
+        elif input_text == "d":
+            return (current_pos[0], min(2, current_pos[1] + 1))
+        else:
+            return None
+
+def game_tick(history, board, players):
+    """
+    This function will handle the game tick.
+
+    Parameters:
+    -----------
+    history: string
+        A list of the moves made by the players
+    board: list
+        A 2D list that represents the board
+
+    Returns:
+    --------
+    tuple
+        A tuple containing the updated history and board_box    
+
+    """
+    error = ""
+    current_pos = (0, 0)
+    while True:
+        clean_screen()
+        player1, player2 = players
+        print_board(board, player1, player2, current_pos)
+
+        last_player = history[-1] if len(history) > 0 else "X"
+        next_player = "X" if last_player == "O" else "O"
+
+        banner = "Player %s's turn" % next_player
+
+        if error:
+            banner += f"\n\033[91m{error.upper()}\033[0m"
+
+        print_banner(banner)
+
+        input_text = getch()
+
+        if input_text == "p":
+            if board[current_pos[0]][current_pos[1]] != " ":
+                error = "This cell is already taken"
+                continue
+
+            board[current_pos[0]][current_pos[1]] = next_player
+            history += next_player
+            current_pos = (0, 0)
+            error = ""
+
+        next_pos = manage_input_in_board(input_text, current_pos)
+
+        if next_pos:
+            current_pos = next_pos
+
+        #return history, board
 
 def main():
     """
@@ -136,9 +285,21 @@ def main():
     """
     print("Welcome to Tik Tak Toe")
 
-    if check_testing():
+    print()
+
+    # instructions
+
+    print("Instructions:")
+    print("1. Use the keys 'w', 'a', 's', 'd' to move the cursor")
+    print("2. Press 'p' to place the mark")
+    print()
+
+
+    option = request_menu()
+
+    if option == 2:
         pruebas()
-        exit(0)
+        return  
 
     player1_name = ask_name("Player 1, tell me your name: ")
     player2_name = ask_name("Player 2, tell me your name: ")
@@ -150,7 +311,12 @@ def main():
 
     print_loading(fn=fn)
 
-    print_board(board_box, player1_name, player2_name)
+    board = create_board_box()
+    history = ""
 
-if __name__ == '__main__':
+    history, board = game_tick(history, board, (player1_name, player2_name))
+
+
+if __name__ == "__main__":
     main()
+
