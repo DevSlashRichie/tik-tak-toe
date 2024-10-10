@@ -4,7 +4,8 @@ functions in Python.
 """
 from time import sleep
 import random as rand
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 def create_board_box():
     return [[' ' for i in range(3)] for _ in range(3)]
@@ -35,7 +36,8 @@ def print_board(board, player1, player2, seleted_index):
 
             cell_text =  "*" if cell == " " else cell
 
-            cell_display = "\033[92m%s\033[0m" % cell_text if is_selected else cell
+            cell_display = "\033[92m%s\033[0m" % cell_text if is_selected \
+            else cell
             print(cell_display, end=' | ')
         print()
         is_last_row = i == len(board) - 1
@@ -129,9 +131,11 @@ def print_graphics_board(board):
     for i in range(3):
         for j in range(3):
             if board[i][j] == 'X':
-                ax.text(j + 0.5, 2.5 - i, 'X', fontsize=40, ha='center', va='center')
+                ax.text(j + 0.5, 2.5 - i, 'X', fontsize=40, ha='center', \
+                        va='center')
             elif board[i][j] == 'O':
-                ax.text(j + 0.5, 2.5 - i, 'O', fontsize=40, ha='center', va='center')
+                ax.text(j + 0.5, 2.5 - i, 'O', fontsize=40, ha='center', \
+                        va='center')
 
     # Show the plot
     plt.gca().set_aspect('equal', adjustable='box')
@@ -169,6 +173,41 @@ def request_menu():
         else:
             print("Please select a valid option")
 
+def print_end_menu():
+    """
+    Print the end menu of the game.
+    """
+    print("1. Play again")
+    print("2. Print History")
+    print("3. Print Board")
+    print("4. Exit")
+
+def request_end_menu():
+    """
+    Request the user to select an option from the end menu.
+
+    Returns:
+    --------
+    int
+        The option selected by the user.
+    """
+    while True:
+        print_end_menu()
+        option = input("Select an option: ")
+
+        if option == "1":
+            return 1
+        elif option == "2":
+            return 2
+        elif option == "3":
+            return 3
+        elif option == "4":
+            print("bye!")
+            exit(0)
+            return None
+        else:
+            print("Please select a valid option")
+
 def print_banner(text):
     """
     Print a banner with the given text.
@@ -198,6 +237,68 @@ def getch():
     finally:
         termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
 
+def check_game_over(board):
+    """
+    Check if the game is over.
+
+    Parameters:
+    -----------
+    board: list
+        A 2D list that represents the board
+
+    Returns:
+    --------
+    bool
+        True if the game is over, False otherwise.
+    """
+    
+    # iter the whole matrix
+
+    print(board)
+    
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == " ":
+                return False
+    
+    return True
+
+
+def check_winner(board):
+    """
+    Check if there is a winner in the game.
+
+    Parameters:
+    -----------
+    board: list
+        A 2D list that represents the board
+
+    Returns:
+    --------
+    str
+        The name of the winner, or None if there is no winner.
+    """
+    # check rows
+    for row in board:
+        if row[0] == row[1] == row[2] and row[0] != " ":
+            return row[0]
+
+    # check columns
+    for col in range(3):
+        if board[0][col] == board[1][col] == board[2][col] \
+            and board[0][col] != " ":
+            return board[0][col]
+
+    # check diagonals
+    if board[0][0] == board[1][1] == board[2][2] and board[0][0] != " ": 
+        return board[0][0]
+
+    if board[0][2] == board[1][1] == board[2][0] and board[0][2] != " ":
+        return board[0][2]
+
+    return None
+
+
 def manage_input_in_board(input_text, current_pos):
     """
     This function will manage the input in the board.
@@ -212,7 +313,7 @@ def manage_input_in_board(input_text, current_pos):
     Returns:
     --------
     tuple
-        A tuple that represents the updated position of the cursor.
+        A tuple containing the new position of the cursor.
     """
     while True:
         if input_text == "w":
@@ -240,17 +341,22 @@ def game_tick(history, board, players):
     Returns:
     --------
     tuple
-        A tuple containing the updated history and board_box    
-
+        A tuple containing the updated history and board_box and the winner.
     """
     error = ""
     current_pos = (0, 0)
     while True:
+
         clean_screen()
         player1, player2 = players
         print_board(board, player1, player2, current_pos)
 
-        last_player = history[-1] if len(history) > 0 else "X"
+        # we check the winner here in order to draw the latest board
+        possible_winner = check_winner(board)
+        if possible_winner:
+            return history, board, possible_winner
+
+        last_player = history[-1][0] if len(history) > 0 else "X"
         next_player = "X" if last_player == "O" else "O"
 
         banner = "Player %s's turn" % next_player
@@ -268,7 +374,7 @@ def game_tick(history, board, players):
                 continue
 
             board[current_pos[0]][current_pos[1]] = next_player
-            history += next_player
+            history.append((next_player, current_pos[0], current_pos[1]))
             current_pos = (0, 0)
             error = ""
 
@@ -277,7 +383,24 @@ def game_tick(history, board, players):
         if next_pos:
             current_pos = next_pos
 
-        #return history, board
+def save_history_into_file(history, player1, player2):
+    """
+    Save the history into a file.
+
+    Parameters:
+    -----------
+    history: list
+        A list of the moves made by the players
+    """
+
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # we append to the end of the file
+    with open("history.txt", "a") as f:
+        line = "Date: %s\nPlayer O: %s vs. Player X: %s\nHistory %s\n\n" \
+            % (date, player1, player2, history)
+
+        f.write(line)
+
 
 def main():
     """
@@ -307,14 +430,50 @@ def main():
     clean_screen()
 
     def fn(_counter, message):
-        return f"Ok {player1_name} and {player2_name}, let's start the game\n{message}"
+        msg = f"Ok {player1_name} and {player2_name}, let's start the \
+game\n{message}"
+        # we do an easteregg here
+        if player1_name == player2_name:
+            msg += "\n\nYou both have the same name, that's cool!"
+        return msg
 
     print_loading(fn=fn)
 
     board = create_board_box()
-    history = ""
+    
+    # history should have entries of the form (player, row, col)
+    history = []
 
-    history, board = game_tick(history, board, (player1_name, player2_name))
+    history, board, winner = game_tick(history, board, (player1_name, \
+                                                        player2_name))
+
+    print()
+    if winner:
+        print(f"Player {winner} wins!")
+    else:
+        print("It's a tie!")
+
+    print()
+
+    save_history_into_file(history, player1_name, player2_name)
+
+    def run_end():
+        end_option = request_end_menu()
+
+        if end_option == 1:
+            main()
+        elif end_option == 2:
+            print(history)
+            run_end()
+        elif end_option == 3:
+            print_graphics_board(board)
+            run_end()
+        else:
+            print("bye!")
+            exit(0)
+
+    run_end()
+
 
 
 if __name__ == "__main__":
