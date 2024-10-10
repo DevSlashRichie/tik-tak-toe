@@ -5,9 +5,18 @@ functions in Python.
 from time import sleep
 import random as rand
 import matplotlib.pyplot as plt
+import sys, termios, tty
 from datetime import datetime
 
 def create_board_box():
+    """
+    Create a 3x3 board with empty cells.
+
+    Returns:
+    --------
+    list
+        A 2D list that represents the board
+    """
     return [[' ' for i in range(3)] for _ in range(3)]
 
 def print_board(board, player1, player2, seleted_index):
@@ -95,25 +104,13 @@ def ask_name(message = "Tell me your name: "):
     while not name:
         name = input(message)
 
-    if not name:
-        print("Please enter a valid name")
-        return None
-
     return name
 
-def pruebas():
-    """
-    This function is used to test the game.
-    """
-    print_loading(seconds=2)
-    print_board(board_box, "Player 1", "Player 2")
-    name = ask_name()
-    print(name)
-    print_loading(1)
-    clean_screen()
-    print("Finished testing")
 
 def print_graphics_board(board):
+    """
+    Print the board using a graphical representation.
+    """
     fig, ax = plt.subplots()
 
     # Set the limits and remove ticks
@@ -130,11 +127,9 @@ def print_graphics_board(board):
     # Plot the Xs and Os
     for i in range(3):
         for j in range(3):
-            if board[i][j] == 'X':
-                ax.text(j + 0.5, 2.5 - i, 'X', fontsize=40, ha='center', \
-                        va='center')
-            elif board[i][j] == 'O':
-                ax.text(j + 0.5, 2.5 - i, 'O', fontsize=40, ha='center', \
+            cell_text = board[i][j]
+            if cell_text != " ":
+                ax.text(j + 0.5, 2.5 - i, cell_text, fontsize=40, ha='center', \
                         va='center')
 
     # Show the plot
@@ -226,13 +221,15 @@ def print_banner(text):
 
 
 def getch():
-    import sys, termios, tty
+    """
+    Get a single character input from the user.
+    """
 
     fd = sys.stdin.fileno()
     orig = termios.tcgetattr(fd)
 
     try:
-        tty.setcbreak(fd)  # or tty.setraw(fd) if you prefer raw mode's behavior.
+        tty.setcbreak(fd)  
         return sys.stdin.read(1)
     finally:
         termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
@@ -276,7 +273,7 @@ def check_winner(board):
     Returns:
     --------
     str
-        The name of the winner, or None if there is no winner.
+        The name of the winner or 'XO' if it's a tie, or None if there is no winner yet.
     """
     # check rows
     for row in board:
@@ -295,6 +292,9 @@ def check_winner(board):
 
     if board[0][2] == board[1][1] == board[2][0] and board[0][2] != " ":
         return board[0][2]
+
+    if check_game_over(board):
+        return "XO"
 
     return None
 
@@ -315,17 +315,16 @@ def manage_input_in_board(input_text, current_pos):
     tuple
         A tuple containing the new position of the cursor.
     """
-    while True:
-        if input_text == "w":
-            return (max(0, current_pos[0] - 1), current_pos[1])
-        elif input_text == "s":
-            return (min(2, current_pos[0] + 1), current_pos[1])
-        elif input_text == "a":
-            return (current_pos[0], max(0, current_pos[1] - 1))
-        elif input_text == "d":
-            return (current_pos[0], min(2, current_pos[1] + 1))
-        else:
-            return None
+    if input_text == "w":
+        return (max(0, current_pos[0] - 1), current_pos[1])
+    elif input_text == "s":
+        return (min(2, current_pos[0] + 1), current_pos[1])
+    elif input_text == "a":
+        return (current_pos[0], max(0, current_pos[1] - 1))
+    elif input_text == "d":
+        return (current_pos[0], min(2, current_pos[1] + 1))
+    else:
+        return None
 
 def game_tick(history, board, players):
     """
@@ -383,7 +382,7 @@ def game_tick(history, board, players):
         if next_pos:
             current_pos = next_pos
 
-def save_history_into_file(history, player1, player2):
+def save_history_into_file(history, player1, player2, winner):
     """
     Save the history into a file.
 
@@ -396,11 +395,63 @@ def save_history_into_file(history, player1, player2):
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # we append to the end of the file
     with open("history.txt", "a") as f:
-        line = "Date: %s\nPlayer O: %s vs. Player X: %s\nHistory %s\n\n" \
-            % (date, player1, player2, history)
+        line = "Date: %s\nPlayer O: %s vs. Player X: %s\nWinner:%s\nHistory %s\n\n" \
+            % (date, player1, player2, winner, history)
 
         f.write(line)
 
+
+
+def pruebas():
+    """
+    This function is used to test the game.
+    """
+    print_loading(seconds=2)
+    name = ask_name()
+    print(name)
+    print_loading(1)
+    clean_screen()
+
+    print("Testing the game")
+    print("Creating the board")
+    board = create_board_box()
+    assert board == [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+
+    print_board(board, "Player 1", "Player 2", (0, 0))
+    print_banner("Board created successfully")
+
+    print("Checking the game over")
+    assert not check_game_over(board)
+    print_banner("Game over checked successfully")
+
+    print("Checking the winner")
+    assert not check_winner(board)
+    print_banner("Winner checked successfully")
+
+    print("Checking the input in the board")
+    new_pos = manage_input_in_board("w", (0, 0))
+    assert new_pos == (0, 0)
+
+    new_pos = manage_input_in_board("s", (0, 0))
+    assert new_pos == (1, 0)
+
+    new_pos = manage_input_in_board("a", (0, 0))
+    assert new_pos == (0, 0)
+
+    new_pos = manage_input_in_board("d", (0, 0))
+    assert new_pos == (0, 1)
+
+    print_banner("Input in the board checked successfully")
+
+    print("Checking the game tick")
+    history, board, winner = game_tick([], board, ("Player 1", "Player 2"))
+    assert winner
+
+    print_banner("Game tick checked successfully")
+
+    clean_screen()
+
+    print_banner("Finished testing")
 
 def main():
     """
@@ -449,13 +500,14 @@ game\n{message}"
 
     print()
     if winner:
-        print(f"Player {winner} wins!")
-    else:
-        print("It's a tie!")
+        if winner == "XO":
+            print("It's a tie!")
+        else:
+            print(f"Player {winner} wins!")
 
     print()
 
-    save_history_into_file(history, player1_name, player2_name)
+    save_history_into_file(history, player1_name, player2_name, winner)
 
     def run_end():
         end_option = request_end_menu()
