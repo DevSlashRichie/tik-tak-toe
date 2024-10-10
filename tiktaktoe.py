@@ -9,8 +9,14 @@ from datetime import datetime
 import os
 import sys
 
+import matplotlib
+
+
 if os.name == "nt":
     import msvcrt
+
+    # if we are on windows we use the Qt5Agg backend
+    matplotlib.use("Qt5Agg")
 else:
     import termios, tty
 
