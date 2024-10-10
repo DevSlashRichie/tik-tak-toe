@@ -5,8 +5,14 @@ functions in Python.
 from time import sleep
 import random as rand
 import matplotlib.pyplot as plt
-import sys, termios, tty
 from datetime import datetime
+import os
+import sys
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import termios, tty
 
 def create_board_box():
     """
@@ -59,7 +65,12 @@ def clean_screen():
     """
     Clean the screen by printing a special character that clears the screen.
     """
-    print("\033c", end="")
+    #print("\033c", end="")
+
+    if os.name == "nt":
+        os.system("cls")
+    else:
+        os.system("clear")
 
 def print_loading(seconds = 4, fn = None):
     """
@@ -225,6 +236,10 @@ def getch():
     Get a single character input from the user.
     """
 
+    if os.name == "nt": # for windows
+        return msvcrt.getch().decode('utf-8')
+
+    # for linux
     fd = sys.stdin.fileno()
     orig = termios.tcgetattr(fd)
 
@@ -250,9 +265,6 @@ def check_game_over(board):
     """
     
     # iter the whole matrix
-
-    print(board)
-    
     for i in range(3):
         for j in range(3):
             if board[i][j] == " ":
