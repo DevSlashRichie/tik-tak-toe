@@ -18,7 +18,7 @@ Clona el repositorio en tu máquina local:
 git clone git@github.com:DevSlashRichie/tik-tak-toe.git
 ```
 
-Necesitarás instalar la dependecia "matplotlib" para poder utilizar el programa.
+Necesitarás instalar la dependecia "matplotlib" y "tornado" para poder utilizar el programa.
 
 Se recomienda utilizar [poetry](https://python-poetry.org/docs/) para instalar las dependencias.
 
@@ -38,6 +38,7 @@ Si no utilizas poetry, puedes instalar la dependencia con pip:
 
 ```bash
 pip install matplotlib
+pip install tornado
 ```
 
 Para correr el programa, ejecutar en terminal:
@@ -45,6 +46,9 @@ Para correr el programa, ejecutar en terminal:
 ```bash
 python tiktaktoe.py
 ```
+
+También puedes ejecutar el programa directamente desde el siguiente link sin tener que instalar nada: 
+[Tik-Tak-Toe](https://replit.com/join/aowhflyvch-a01710266)
 
 El primer jugador deberá introducir su nombre y elegir entre las opciones 'X' o 'O'.
 El segundo jugador deberá introducir su nombre y se le asignará el símbolo restante.
@@ -56,6 +60,7 @@ Al finalizar la partida, se mostrará el resultado y se preguntará si desean ju
 
 | **Etapa**   | **Descripción**                                                                                                                                                                |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ----------- | - Mostrar Menu de Opciones
 | **Entrada** | - Jugador 1: Introduce su nombre                                                                                                                                               |
 |             | - Jugador 2: Introduce su nombre.                                                                                                                                              |
 | **Proceso** | **1. Inicialización:**                                                                                                                                                         |
