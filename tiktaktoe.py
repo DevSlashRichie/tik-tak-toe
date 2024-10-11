@@ -16,7 +16,7 @@ if os.name == "nt":
     import msvcrt
 
     # if we are on windows we use the Qt5Agg backend
-    matplotlib.use("Qt5Agg")
+    matplotlib.use("WebAgg")
 else:
     import termios, tty
 
